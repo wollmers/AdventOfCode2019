@@ -2,8 +2,7 @@
 
 use strict;
 use warnings;
-
-use Data::Dumper;
+no warnings 'recursion';
 
 my @input = <>;
 
@@ -22,8 +21,6 @@ K)L
 EOF
 
 my $orbits = {};
-
-print Dumper(@input);
 
 #for my $line (split(/\n/,$example)) {
 for my $line (@input) {
