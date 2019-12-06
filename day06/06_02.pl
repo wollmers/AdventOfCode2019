@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+no warnings 'recursive';
 
 use Data::Dumper;
 
@@ -54,18 +55,17 @@ for my $orbit (keys %$orbits) {
 print $count,"\n"; # 117672
 
 my $start = 'YOU';
-my $end = 'SAN';
+my $end   = 'SAN';
 my $start_path = {};
 my $start_count = 0;
-my $end_count = 0;
 my $end_path = {};
+my $end_count = 0;
 
-path($start,$orbits,$start_path,$start_count);
-path($end,$orbits,$end_path,$end_count);
+path($start, $orbits, $start_path, $start_count);
+path($end,   $orbits, $end_path,   $end_count);
 
 my $result = 0;
 my $orbit = $start;
-#for my $orbit ($orbit = $start; $orbit) {
 while ($orbit) {
   if (exists $orbits->{$orbit}
     && exists $start_path->{$orbit}
@@ -77,8 +77,7 @@ while ($orbit) {
   elsif (exists $orbits->{$orbit}) {
     $orbit = $orbits->{$orbit};
   }
-  else {$orbit = undef}
-
+  else { $orbit = undef }
 }
 print $result,"\n"; # 277
 
@@ -89,7 +88,7 @@ sub path {
     $path->{$orbits->{$orbit}} = $count;
     path($orbits->{$orbit},$orbits,$path,$count);
   }
-  else { return 0;}
+  else { return 0; }
 }
 
 sub count_orbits {
