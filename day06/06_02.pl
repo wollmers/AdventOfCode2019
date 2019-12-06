@@ -4,10 +4,6 @@ use strict;
 use warnings;
 no warnings 'recursion';
 
-use Data::Dumper;
-
-my @input = <>;
-
 my $example =<<EOF;
 COM)B
 B)C
@@ -38,11 +34,13 @@ K)YOU
 I)SAN
 EOF
 
+
+my @input = <>;
+
+my $TEST = 0;
+if ($TEST) { @input = split(/\n/,$example2); }
+
 my $orbits = {};
-
-#print Dumper(@input);
-
-#for my $line (split(/\n/,$example2)) {
 for my $line (@input) {
   my ($center,$around) = $line =~ /(\w+)\)(\w+)/;
   $orbits->{$around} = $center;
@@ -62,42 +60,11 @@ sub build_paths {
   return $count;
 }
 
-print '$paths_count: ',$paths_count,"\n"; # 117672
+print 'paths_count: ',$paths_count,"\n"; # 117672
 
-my $count = 0;
-for my $orbit (keys %$orbits) {
-  $count += count_orbits($orbit);
-}
-print '$count: ',$count,"\n"; # 117672
 
 my $start = 'YOU';
 my $end   = 'SAN';
-my $start_path = {};
-my $start_count = 0;
-my $end_path = {};
-my $end_count = 0;
-
-#path($start, $orbits, $start_path, $start_count);
-$start_count = path2($start, $orbits, $start_path);
-#path($end,   $orbits, $end_path,   $end_count);
-$end_count = path2($end,   $orbits, $end_path);
-
-my $result = 0;
-my $orbit = $start;
-while ($orbit) {
-  if (exists $orbits->{$orbit}
-    && exists $start_path->{$orbit}
-    && exists $end_path->{$orbit}
-    ) {
-    $result = $start_path->{$orbit} + $end_path->{$orbit} - 2;
-    last;
-  }
-  elsif (exists $orbits->{$orbit}) {
-    $orbit = $orbits->{$orbit};
-  }
-  else { $orbit = undef }
-}
-print $result,"\n"; # 277
 
 my $distance = distance($start,$end,$paths,$orbits);
 
@@ -124,7 +91,7 @@ sub distance {
   return $result;
 }
 
-print '$distance: ',$distance,"\n";
+print "distance $start -> $end ",$distance,"\n"; # 277
 
 # recursive
 sub path {
@@ -151,6 +118,7 @@ sub path2 {
   }
 }
 
+# not needed, if we use path2
 sub count_orbits {
   my ($orbit) = @_;
   if (exists $orbits->{$orbit}) {
