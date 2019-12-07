@@ -121,6 +121,7 @@ What is the diagnostic code for system ID 5?
 
 
 my $tests = [
+
 [ 8,1,[3,9,8,9,10,9,4,9,99,-1,8],],
 [ 7,0,[3,9,8,9,10,9,4,9,99,-1,8],],
 
@@ -142,9 +143,11 @@ my $tests = [
 [ 7,999,[3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
   1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
   999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99],],
+  #
 [ 8,1000,[3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
   1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
   999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99],],
+
 [ 9,1001,[3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
   1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
   999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99],],
@@ -152,24 +155,30 @@ my $tests = [
 ];
 
 my $code = [];
-my $IO = {'IN' => '', 'OUT' => '',};
+my $HW = {'IN' => '', 'OUT' => '', 'i' => 0, 'p1' => 0, 'p2' => 0, 'p3' => 0, 'debug' => 0};
 
 if (1) {
 my $test_count = 0;
-my $test_limit = 999;
+my $test_skip = 13;
+my $test_limit = 14;
 for my $test (@$tests) {
   $test_count++;
+  next if ($test_count <= $test_skip);
   last if ($test_count > $test_limit);
-  $IO->{'IN'} = $test->[0];
-  $IO->{'OUT'} = -999;
+  $HW->{'IN'} = $test->[0];
+  $HW->{'OUT'} = -999;
+  $HW->{'i'} = 0;
   @{$code} = @{$test->[2]};
-  runit($IO,$code);
-  if ($IO->{'OUT'} == $test->[1]) {
+  decomp($HW,$code);
+  $HW->{'debug'} = 1;
+  runit1($HW,$code);
+  decomp($HW,$code);
+  if ($HW->{'OUT'} == $test->[1]) {
     print "$test_count OK \n";
   }
   else {
-    print "$test_count FAIL expexted $test->[1] got $IO->{'OUT'} \n";
-    print 'IN OUT ',"$IO->{'IN'} $IO->{'OUT'} \n";
+    print "$test_count FAIL expexted $test->[1] got $HW->{'OUT'} \n";
+    print 'IN OUT ',"$HW->{'IN'} $HW->{'OUT'} \n";
     print '@{$code} ',join(' ',@{$code}),"\n";
   }
 }
@@ -177,53 +186,113 @@ for my $test (@$tests) {
 
 #exit;
 
-if (1) {
-$IO = {'IN' => '5', 'OUT' => '',};
+if (0) {
+$HW->{'IN'} = '5';
+$HW->{'OUT'} = '';
+$HW->{'i'} = 0;
 
 @{$code} = $input =~ m/([-]?\d+)/g;
 #print Dumper($code);
-runit($IO,$code);
+runit($HW,$code);
 
-print $IO->{'OUT'},"\n"; # 11826654
+print $HW->{'OUT'},"\n"; # 11826654
+}
+
+sub decomp {
+  my ($HW,$code) = @_;
+
+  print "\n",'ADDR',"\n";
+  for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
+    $HW->{'i'} += print_line($HW,$code);
+  }
+  print "\n";
+}
+
+sub print_line {
+  my ($HW,$code) = @_;
+
+    my $op = op($HW,$code);
+
+    print sprintf("%04d",$HW->{'i'});
+
+    my $len;my $name;
+    if (ref ops($op)) {
+      $len  = ops($op)->{'arity'} + 1;
+      $name = ops($op)->{'name'};
+    }
+    else { $len = 1; $name = ''; }
+
+    my $j = 0;
+    for ( ;$j < $len; $j++ ) {
+        print " ",sprintf("%5s",sprintf("%d", $code->[$HW->{'i'} + $j]));
+    }
+    for ( ;$j < 4; $j++) {
+        print " ",sprintf("%5s"," ");
+    }
+    print " ",sprintf("%-5s",$name);
+
+    for ($j = 1 ;$j < $len; $j++ ) {
+        print " ",f($HW,$code,$j);
+    }
+    print "\n";
+
+    return $len;
+}
+
+sub runit1 {
+  my ($HW,$code) = @_;
+
+  if ($HW->{'debug'} > 0) {
+    print "\n",'DEBUG',' IN: ',$HW->{'IN'},"\n";
+    print 'ADDR',"\n";
+  }
+
+  for ($HW->{'i'}=0; $HW->{'i'} < @{$code}; ) {
+
+    my $op = op($HW,$code);
+
+    if ($HW->{'debug'} > 0) { print_line($HW,$code); }
+
+    if ($op == 99) { last; }
+    #print 'i op: ',"$HW->{'i'},$op","\n";
+    ops($op)->{'ins'}->($HW,$code);
+
+  }
 }
 
 sub runit {
-  my ($IO,$code) = @_;
+  my ($HW,$code) = @_;
 
-  for (my $i=0; $i < @{$code}; ) {
-    my ($op,$p1,$p2,$p3) = op($code->[$i]);
+  for ($HW->{'i'}=0; $HW->{'i'} < @{$code}; ) {
+
+    #my $op = op($code->[$HW->{'i'}],$HW);
+    my $op = op($HW,$code);
 
     if ($op == 99) { last; }
 
     elsif ($op == 1) {
-      $code->[$code->[$i + 3]]
-        = val($code,$p1,$code->[$i + 1]) + val($code,$p2,$code->[$i + 2]);
-      $i += 4;
+      $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) + v($HW,$code,2);
+      $HW->{'i'} += 4;
     }
     elsif ($op == 2) {
-      $code->[$code->[$i + 3]]
-        = val($code,$p1,$code->[$i + 1]) * val($code,$p2,$code->[$i + 2]);
-      $i += 4;
+      $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) * v($HW,$code,2);
+      $HW->{'i'} += 4;
     }
     elsif ($op == 3) {
-      $code->[$code->[$i + 1]]
-        = $IO->{'IN'};
-      $i += 2;
+      $code->[$code->[$HW->{'i'} + 1]] = $HW->{'IN'};
+      $HW->{'i'} += 2;
     }
     elsif ($op == 4) {
-      $IO->{'OUT'} = val($code,$p1,$code->[$i + 1]);
-      $i += 2;
+      $HW->{'OUT'} = v($HW,$code,1);
+      $HW->{'i'} += 2;
     }
 #Opcode 5 is jump-if-true:
 #if the first parameter is non-zero,
 #  it sets the instruction pointer to the value from the second parameter.
 #  Otherwise, it does nothing.
     elsif ($op == 5) {
-      if ( val($code,$p1,$code->[$i + 1]) != 0) {
-        $i = val($code,$p2,$code->[$i + 2]);
-        #print '$i $len val ',"$i $len _val($code,$p1,$code->[$i + 1])","\n";
-      }
-      else { $i += 3; }
+      if ( v($HW,$code,1) != 0) { $HW->{'i'} = v($HW,$code,2); }
+      else { $HW->{'i'} += 3; }
     }
 
 #Opcode 6 is jump-if-false:
@@ -231,24 +300,21 @@ sub runit {
 #    it sets the instruction pointer to the value from the second parameter.
 #  Otherwise, it does nothing.
     elsif ($op == 6) {
-      if ( val($code,$p1,$code->[$i + 1]) == 0) {
-        $i = val($code,$p2,$code->[$i + 2]);
-      }
-      else { $i += 3; }
+      if ( v($HW,$code,1) == 0) { $HW->{'i'} = v($HW,$code,2); }
+      else { $HW->{'i'} += 3; }
     }
 #Opcode 7 is less than:
 #  if the first parameter is less than the second parameter,
 #    it stores 1 in the position given by the third parameter.
 #  Otherwise, it stores 0.
     elsif ($op == 7) {
-      if ( val($code,$p1,$code->[$i + 1])
-          < val($code,$p2,$code->[$i + 2])) {
-        $code->[$code->[$i + 3]] = 1;
+      if ( v($HW,$code,1) < v($HW,$code,2) ) {
+        $code->[$code->[$HW->{'i'} + 3]] = 1;
       }
       else {
-        $code->[$code->[$i + 3]] = 0;
+        $code->[$code->[$HW->{'i'} + 3]] = 0;
       }
-      $i += 4;
+      $HW->{'i'} += 4;
     }
 
 #Opcode 8 is equals:
@@ -256,14 +322,13 @@ sub runit {
 #    it stores 1 in the position given by the third parameter.
 #  Otherwise, it stores 0.
     elsif ($op == 8) {
-      if ( val($code,$p1,$code->[$i + 1])
-          == val($code,$p2,$code->[$i + 2])) {
-        $code->[$code->[$i + 3]] = 1;
+      if ( v($HW,$code,1) == v($HW,$code,2) ) {
+        $code->[$code->[$HW->{'i'} + 3]] = 1;
       }
       else {
-        $code->[$code->[$i + 3]] = 0;
+        $code->[$code->[$HW->{'i'} + 3]] = 0;
       }
-      $i += 4;
+      $HW->{'i'} += 4;
     }
   }
 }
@@ -280,43 +345,139 @@ DE - two-digit opcode,      02 == opcode 2
                                   omitted due to being a leading zero
 =cut
 sub op {
-  my ($op) = @_;
+  my ($HW,$code) = @_;
+
+  my $op = $code->[$HW->{'i'}];
   my ($instr) = $op =~ /(\d\d?)$/;
   $op =~ s/(\d\d?)$//;
 
-  #print '$instr,$op: ',"$instr,$op","\n";
-
   $op = '000' . $op;
 
-  my ($p3,$p2,$p1) = $op =~ /(\d)(\d)(\d)$/;
+  ($HW->{'p3'},$HW->{'p2'},$HW->{'p1'}) = $op =~ /(\d)(\d)(\d)$/;
 
-  return ($instr,$p1,$p2,$p3);
+  $instr =~ s/^0*//;
+
+  return $instr;
 }
-=pod
+
+sub v {
+  my ($HW,$code,$p) = @_;
+
+  my $px = 'p' . $p;
+
+  # immediate (literal) mode set ? litteral : value at address
+  my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : $code->[$code->[$HW->{'i'} + $p]];
+
+  return $val;
+}
+
+sub f {
+  my ($HW,$code,$p) = @_;
+
+  my $px = 'p' . $p;
+
+  # immediate (literal) mode set ? litteral : value at address
+  my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : '*' . $code->[$HW->{'i'} + $p];
+
+  return $val;
+}
+
 sub ops {
   my ($op) = @_;
 
   my $ops = {
-    '1' => {'name' => 'ADD',  'arity' => 3, 'ins' => sub {$_[4] = $_[2] + $_[3];$_[0]+4} },
-    '2' => {'name' => 'MULT', 'arity' => 3, 'ins' => sub {$_[4] = $_[2] * $_[3];$_[0]+4} },
-    '3' => {'name' => 'IN',   'arity' => 1, 'ins' => sub {$_[2] = $_[1]->{'IN'};$_[0]+2} },
-    '4' => {'name' => 'OUT',  'arity' => 1, 'ins' => sub {$_[1]->{'OUT'} = $_[2];$_[0]+2} },
-    '5' => {'name' => 'JT',   'arity' => 2, 'ins' => sub {($_[2] != 0) ? $_[3] : $_[0]+3} },
-    '6' => {'name' => 'JF',   'arity' => 2, 'ins' => sub {($_[2] == 0) ? $_[3] : $_[0]+3} },
-    '7' => {'name' => 'STL',  'arity' => 3, 'ins' => sub {$_[4] = ($_[2]  < $_[3]) ? 1 : 0;$_[0]+4}} },
-    '8' => {'name' => 'STE',  'arity' => 3, 'ins' => sub {$_[4] = ($_[2] == $_[3]) ? 1 : 0;$_[0]+4}} },
+    '1' => {
+      'name' => 'ADD',
+      'arity' => 3,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) + v($HW,$code,2);
+        $HW->{'i'} += 4;
+      },
+    },
+    '2' => {
+      'name' => 'MULT',
+      'arity' => 3,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) + v($HW,$code,2);
+        $HW->{'i'} += 4;
+      }
+    },
+    '3' => {
+      'name' => 'IN',
+      'arity' => 1,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        $code->[$code->[$HW->{'i'} + 1]] = $HW->{'IN'};
+        $HW->{'i'} += 2;
+      },
+    },
+    '4' => {
+      'name' => 'OUT',
+      'arity' => 1,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        $HW->{'OUT'} = v($HW,$code,1);
+        $HW->{'i'} += 2;
+      },
+    },
+    '5' => {
+      'name' => 'JT',
+      'arity' => 2,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        if ( v($HW,$code,1) != 0) { $HW->{'i'} = v($HW,$code,2); }
+        else { $HW->{'i'} += 3; }
+      },
+    },
+    '6' => {
+      'name' => 'JF',
+      'arity' => 2,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        if ( v($HW,$code,1) == 0) { $HW->{'i'} = v($HW,$code,2); }
+        else { $HW->{'i'} += 3; }
+      },
+    },
+    '7' => {
+      'name' => 'STL',
+      'arity' => 3,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        if ( v($HW,$code,1) < v($HW,$code,2) ) {
+          $code->[$code->[$HW->{'i'} + 3]] = 1;
+        }
+        else {
+          $code->[$code->[$HW->{'i'} + 3]] = 0;
+        }
+        $HW->{'i'} += 4;
+      }
+    },
+    '8' => {
+      'name' => 'STE',
+      'arity' => 3,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        if ( v($HW,$code,1) == v($HW,$code,2) ) {
+          $code->[$code->[$HW->{'i'} + 3]] = 1;
+        }
+        else {
+          $code->[$code->[$HW->{'i'} + 3]] = 0;
+        }
+        $HW->{'i'} += 4;
+      }
+    },
 
-   '99' => {'name' => 'END',  'arity' => 0, 'ins' => sub { undef } },
+   '99' => {
+     'name' => 'END',
+     'arity' => 0,
+     'ins' => sub { undef }
+    },
   };
 
   return $ops->{$op};
 }
-=cut
 
-sub val {
-  my ($program,$p,$v) = @_;
 
-  my $val = $p ? $v : $program->[$v];
 
-  return $val;
-}
