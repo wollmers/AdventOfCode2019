@@ -15,7 +15,7 @@ my $layers = {};
 
 my $ll = $width * $height;
 
-if (0) {
+if (1) {
   for (my $i=0; $i < length($input); $i += $ll) {
     my $string = substr($input,$i,$ll);
 
@@ -24,10 +24,6 @@ if (0) {
       $layers->{$layer}->{$integer}++;
     }
   }
-
-
-
-  print Dumper($layers);
 
   my $min_layer;
   my $min_zeros = 99999;
@@ -52,7 +48,7 @@ if (0) {
 # and a white pixel in the fourth layer,
 # => the final image would have a black pixel at that position.
 
-if (1) {
+$layers = {};
 for (my $i=0; $i < length($input); $i += $ll) {
   my $string = substr($input,$i,$ll);
 
@@ -63,18 +59,13 @@ for (my $i=0; $i < length($input); $i += $ll) {
     $j++;
   }
 }
-}
+
 
 my $image = {};
-
-print '$ll: ',$ll,"\n";
 
 for (my $i=0;$i<$ll;$i++) {
   $image->{$i} = 2;
 }
-
-#print Dumper($layers);
-#print Dumper($image);
 
 for (my $i=0;$i<$ll;$i++) {
   for my $layer (sort { $a <=> $b } keys %$layers) {
@@ -86,27 +77,46 @@ for (my $i=0;$i<$ll;$i++) {
 
 my $result_string = '';
 
-#print Dumper($image);
-
-
-
-  for my $i (sort { $a <=> $b } keys %$image) {
-      $result_string .= $image->{$i};
-  }
+for my $i (sort { $a <=> $b } keys %$image) {
+  $result_string .= $image->{$i};
+}
 
 print '$result_string: ',$result_string,"\n","\n";
 
 for (my $i=0; $i < length($result_string); $i += $width) {
   my $string = substr($result_string,$i,$width);
   $string =~ s/0/ /g;
+  $string =~ s/1/0/g;
   print $string,"\n";
 }
 
-my $h_gaps = ' ' x $width;
-for (my $i=0; $i < length($result_string); $i += $width) {
-  my $string = substr($result_string,$i,$width);
-  $h_gaps &= $string;
+# enlarge gaps between glyphs
+my $h_gaps = [];
+
+for (my $j=0;$j < $width; $j++) {
+  $h_gaps->[$j] = 0;
 }
 
-print '$h_gaps: ',$h_gaps,"\n","\n";
+for (my $i=0; $i < length($result_string); $i += $width) {
+  my $string = substr($result_string,$i,$width);
+  my $array = [split(//,$string)];
+  for (my $j=0;$j < length($string); $j++) {
+    if ($h_gaps->[$j] ne $array->[$j]) { $h_gaps->[$j] = 1; }
+  }
+}
 
+print "\n","\n",'$h_gaps: ',@{$h_gaps},"\n","\n";
+
+for (my $i=0; $i < length($result_string); $i += $width) {
+  my $string = substr($result_string,$i,$width);
+  my $array = [split(//,$string)];
+  my $line = '';
+  for (my $j=0;$j < length($string); $j++) {
+    if ($h_gaps->[$j] eq '0') { $line .= '00'; }
+    else { $line .= $array->[$j]; }
+  }
+  $line =~ s/0/ /g;
+  $line =~ s/1/0/g;
+  print $line,"\n";
+}
+print "\n";
