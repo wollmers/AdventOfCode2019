@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 
 
-my $input = <>;my $width = 25;my $height = 6;
+my $input = <>;my $width = 25;my $height = 6; # HZCZU
 
 #my $input = '123456789789012012';my $width = 3;my $height = 3; # task 1: 1
 #my $input = '0222112222120000';my $width = 2;my $height = 2; # task 2: 0110
@@ -88,6 +88,8 @@ my $result_string = '';
 
 #print Dumper($image);
 
+
+
   for my $i (sort { $a <=> $b } keys %$image) {
       $result_string .= $image->{$i};
   }
@@ -98,8 +100,13 @@ for (my $i=0; $i < length($result_string); $i += $width) {
   my $string = substr($result_string,$i,$width);
   $string =~ s/0/ /g;
   print $string,"\n";
-
 }
 
+my $h_gaps = ' ' x $width;
+for (my $i=0; $i < length($result_string); $i += $width) {
+  my $string = substr($result_string,$i,$width);
+  $h_gaps &= $string;
+}
 
+print '$h_gaps: ',$h_gaps,"\n","\n";
 
