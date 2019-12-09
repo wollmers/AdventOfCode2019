@@ -3,70 +3,43 @@ use 5.010;
 use strict;
 use warnings;
 
+#use bignum;
+
 use Data::Dumper;
 
-#my $input = <>;
-
+my $input = <>;
 
 my $tests = [
-#  p1 p2        0    1   2   3  4   5   6   7  8  9
-[ [0, 0], 0,[1101,   0,  0,  9, 4,  9, 99,  0, 0, 9],'ADD lit 1'],
-[ [1, 2], 3,[1101,   1,  2,  9, 4,  9, 99,  0, 0, 9],'ADD lit 2'],
-[ [1,-2],-1,[1101,   1, -2,  9, 4,  9, 99,  0, 0, 9],'ADD lit 3'],
 
-[ [0, 0], 0,[   1,   7,  8,  9, 4,  9, 99,  0, 0, 9],'ADD adr 1'],
-[ [1, 2], 3,[   1,   7,  8,  9, 4,  9, 99,  1, 2, 9],'ADD adr 2'],
-[ [1,-2],-1,[   1,   7,  8,  9, 4,  9, 99,  1,-2, 9],'ADD adr 3'],
+[ 1,99,[109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99],],
 
-[ [0, 0], 0,[1102,   0,  0,  9, 4,  9, 99,  0, 0, 9],'MULT lit 1'],
-[ [1, 2], 2,[1102,   1,  2,  9, 4,  9, 99,  0, 0, 9],'MULT lit 2'],
-[ [1,-2],-2,[1102,   1, -2,  9, 4,  9, 99,  0, 0, 9],'MULT lit 3'],
+[ 1,1219070632396864,[1102,34915192,34915192,7,4,7,99,0],],
 
-[ [0, 0], 0,[   2,   7,  8,  9, 4,  9, 99,  0, 0, 9],'MULT adr 1'],
-[ [1, 2], 2,[   2,   7,  8,  9, 4,  9, 99,  1, 2, 9],'MULT adr 2'],
-[ [1,-2],-2,[   2,   7,  8,  9, 4,  9, 99,  1,-2, 9],'MULT adr 3'],
-
-#  p1 p2        0    1   2   3  4   5   6   7  8  9  10 11 12
-[ [1,-2], 1,[   3,   7,  4,  7, 99, 1, -2,  9],'IN adr 1'],
-
-[ [1,-2], 1,[ 104,   1, 99,  1,-2, 9],'OUT lit 1'],
-[ [1,-2], 1,[   4,   3, 99,  1,-2, 9],'OUT adr 2'],
-
-#  p1 p2         0    1   2   3   4   5    6  7   8   9  10 11 12
-[ [1,-2], 1,[ 1105,   1,  6, 104, 0, 99, 104, 1, 99,  1, -2, 9],'JT lit 1'],
-[ [1,-2], 0,[ 1105,   0,  6, 104, 0, 99, 104, 1, 99,  1, -2, 9],'JT lit 2'],
-
-[ [1,-2], 1,[    5,   9, 10, 104, 0, 99, 104, 1, 99,  1,  6, 9],'JT adr 1'],
-[ [1,-2], 0,[    5,   9, 10, 104, 0, 99, 104, 1, 99,  0,  6, 9],'JT adr 2'],
-
-#  p1 p2         0    1   2   3   4   5    6  7   8   9  10 11 12
-[ [1,-2], 1,[ 1106,   0,  6, 104, 0, 99, 104, 1, 99,  1, -2, 9],'JF lit 1'],
-[ [1,-2], 0,[ 1106,   1,  6, 104, 0, 99, 104, 1, 99,  1, -2, 9],'JF lit 2'],
-
-[ [1,-2], 1,[    6,   9, 10, 104, 0, 99, 104, 1, 99,  0,  6, 9],'JF adr 1'],
-[ [1,-2], 0,[    6,   9, 10, 104, 0, 99, 104, 1, 99,  1,  6, 9],'JF adr 2'],
-
-#  p1 p2         0    1   2   3    4   5    6    7   8   9  10 11 12
-[ [1,-2], 1,[ 1107,   0,  6,  7,   4,  7,  99,   0, -2, 9],'STL lit 1'],
-[ [1,-2], 0,[ 1107,   6,  0,  7,   4,  7,  99,   1, -2, 9],'STL lit 2'],
-
-[ [1,-2], 1,[    7,   7,  8,  9,   4,  9,  99,   0,  6, 9],'STL adr 1'],
-[ [1,-2], 0,[    7,   7,  8,  9,   4,  9,  99,   6,  0, 9],'STL adr 2'],
-
-# STE
-#  p1 p2         0    1   2   3    4   5    6    7   8   9  10 11 12
-[ [1,-2], 1,[ 1108,   6,  6,  7,   4,  7,  99,   0, -2, 9],'STE lit 1'],
-[ [1,-2], 0,[ 1108,   6,  7,  7,   4,  7,  99,   1, -2, 9],'STE lit 2'],
-
-[ [1,-2], 1,[    8,   7,  8,  9,   4,  9,  99,   6,  6, 9],'STE adr 1'],
-[ [1,-2], 0,[    8,   7,  8,  9,   4,  9,  99,   6,  7, 9],'STE adr 2'],
+[ 1,1125899906842624,[104,1125899906842624,99],],
 
 ];
 
+
+
 my $code = [];
+
+=pod
+my $HW = {
+ 'IN'    => '',
+ 'OUT'   => '',
+ 'i'     => 0,
+ 'p1'    => 0,
+ 'p2'    => 0,
+ 'p3'    => 0,
+ 'debug' => 0,
+ 'halt'  => 0,
+ 'wait'  => 1,
+};
+=cut
+
 my $HW_init = {
-  'IN'    => '',
-  'OUT'   => '',
+  'IN'    => [],
+  'OUT'   => [],
   'i'     => 0,
   'p1'    => 0,
   'p2'    => 0,
@@ -74,60 +47,73 @@ my $HW_init = {
   'debug' => 0,
   'halt'  => 0,
   'wait'  => 0,
+  'base'  => 0,
+  'code'  => [],
+  'alloc_first' => 0,
+  'alloc_last'  => 0,
 };
-
-if (1) {
-  my $test_count = 0;
-  my $test_skip  = 0;
-  my $test_limit = 999;
-
-  for my $test (@$tests) {
-    $test_count++;
-    next if ($test_count <= $test_skip);
-    last if ($test_count > $test_limit);
-
-    my $code = [];
-    @{$code} = @{$test->[2]};
-
-    my $HW   = {};
-    %{$HW}   = %{$HW_init};
-
-    $HW->{'IN'} = $test->[0][0];
-
-    runit($HW,$code);
-
-    my $result = $HW->{'OUT'};
-
-    if ($result == $test->[1]) {
-      print "$test_count OK - ",$test->[3],"\n";
-    }
-    else {
-      print "$test_count FAIL expected ",$test->[1]," got $result - ",$test->[3],"\n";
-    }
-  }
-}
 
 if (0) {
   my $test_count = 0;
   my $test_skip  = 0;
-  my $test_limit = 99;
-
+  my $test_limit = 1;
   for my $test (@$tests) {
     $test_count++;
     next if ($test_count <= $test_skip);
     last if ($test_count > $test_limit);
 
-    my $code = [];
-    @{$code} = @{$test->[2]};
+    my $input = join(',',@{$test->[2]});
 
-    my $HW   = {};
+    my $HW = {};
     %{$HW}   = %{$HW_init};
 
-    print "$test_count decompile - ",$test->[3],"\n";
-    print '$code: ',code_array2string($code),"\n";
-    decomp($HW,$code);
+    push @{$HW->{'IN'}},$test->[0];
+    #$HW->{'OUT'}  = -999;
+
+    my $code = $HW->{'code'};
+    @{$code} = $input =~ m/([-]?\d+)/g;
+
+    $HW->{'alloc_first'} = scalar @{$code};
+    $HW->{'alloc_last'}  = $HW->{'alloc_first'};
+    #decomp($HW,$code);
+    alloc($HW,$code,101);
+
+    #$HW->{'debug'} = 1;
+    runit($HW,$code);
+    my $result = shift @{$HW->{'OUT'}};
+    $result //= -999;
+
+    if ($result == $test->[1]) {
+      print "$test_count OK \n";
+    }
+    else {
+      print "$test_count FAIL expexted $test->[1] got $result \n";
+    }
   }
 }
+
+if (1) {
+
+    my $HW = {};
+    %{$HW}   = %{$HW_init};
+
+    push @{$HW->{'IN'}},2;
+
+    my $code = $HW->{'code'};
+    @{$code} = $input =~ m/([-]?\d+)/g;
+
+    $HW->{'alloc_first'} = scalar @{$code};
+    $HW->{'alloc_last'}  = $HW->{'alloc_first'};
+    #decomp($HW,$code);
+    alloc($HW,$code,10000);
+
+    #$HW->{'debug'} = 1;
+    runit($HW,$code);
+    my $result = join(',',@{$HW->{'OUT'}});
+
+    say 'result: ',$result; # task1: 2662308295 task 2: 63441
+}
+
 
 ###### SUBS ##########
 
@@ -135,7 +121,7 @@ sub runit {
   my ($HW,$code) = @_;
 
   if ($HW->{'debug'} > 0) {
-    print "\n",'DEBUG',' IN: ',$HW->{'IN'},"\n";
+    print "\n",'DEBUG',' IN: [',join(',',@{$HW->{'IN'}}),"]\n";
     print 'ADDR',"\n";
   }
 
@@ -150,7 +136,13 @@ sub runit {
       $HW->{'wait'} = 1;
     }
     else {
-      ops($op)->{'ins'}->($HW,$code);
+      if (defined ops($op)) {
+        ops($op)->{'ins'}->($HW,$code);
+      }
+      else {
+        say 'undefined op: ',$op;
+        return;
+      }
     }
   }
 }
@@ -159,7 +151,7 @@ sub step {
   my ($HW,$code) = @_;
 
   if ($HW->{'debug'} > 0) {
-    print "\n",'DEBUG',' IN: ',$HW->{'IN'},"\n";
+    print "\n",'DEBUG',' IN: [',join(',',@{$HW->{'IN'}}),"]\n";
     print 'ADDR',"\n";
   }
 
@@ -168,6 +160,15 @@ sub step {
   if ($HW->{'debug'} > 0) { print_line($HW,$code); }
 
   ops($op)->{'ins'}->($HW,$code);
+}
+
+sub alloc {
+  my ($HW,$code,$cells) = @_;
+  my $end = $HW->{'alloc_first'} + $HW->{'alloc_last'};
+  for (my $i=0;$i<$cells;$i++) {
+    $code->[$HW->{'alloc_last'} + $i + 1] = 0;
+  }
+  $HW->{'alloc_last'} += $cells;
 }
 
 =pod
@@ -198,15 +199,41 @@ sub op {
   return $instr;
 }
 
-sub v {
+sub a {
   my ($HW,$code,$p) = @_;
 
   my $px = 'p' . $p;
 
   # immediate (literal) mode set ? litteral : value at address
-  my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : $code->[$code->[$HW->{'i'} + $p]];
+  #my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : $code->[$code->[$HW->{'i'} + $p]];
 
-  return $val;
+  my $addr = 0;
+  if ($HW->{$px} == 0) {
+    $addr = $code->[$HW->{'i'} + $p];
+    if (($addr < 0) || ($addr > $HW->{'alloc_last'})) {
+      say 'ERROR addr: ',$addr,' outside memory last: ',$HW->{'alloc_last'};
+    }
+  }
+  elsif ($HW->{$px} == 1) {
+    $addr = $HW->{'i'} + $p;
+    if (($addr < 0) || ($addr > $HW->{'alloc_last'})) {
+      say 'ERROR addr: ',$addr,' outside memory last: ',$HW->{'alloc_last'};
+    }
+  }
+  elsif ($HW->{$px} == 2) {
+    $addr = $HW->{'base'} + $code->[$HW->{'i'} + $p];
+    if (($addr < 0) || ($addr > $HW->{'alloc_last'})) {
+      say 'ERROR addr: ',$addr,' outside memory last: ',$HW->{'alloc_last'};
+    }
+  }
+
+  return $addr;
+}
+
+sub v {
+  my ($HW,$code,$p) = @_;
+
+  return $code->[a(@_)];
 }
 
 sub f {
@@ -215,7 +242,12 @@ sub f {
   my $px = 'p' . $p;
 
   # immediate (literal) mode set ? literal : value at address
-  my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : '*' . $code->[$HW->{'i'} + $p];
+  #my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : '*' . $code->[$HW->{'i'} + $p];
+
+  my $val = 0;
+  if    ($HW->{$px} == 0) { $val = '*' . $code->[$HW->{'i'} + $p]; }
+  elsif ($HW->{$px} == 1) { $val = $code->[$HW->{'i'} + $p]; }
+  elsif ($HW->{$px} == 2) { $val = 'b+(' . $code->[$HW->{'i'} + $p] . ')'; }
 
   return $val;
 }
@@ -229,7 +261,7 @@ sub ops {
       'arity' => 3,
       'ins' => sub {
         my ($HW,$code) = @_;
-        $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) + v($HW,$code,2);
+        $code->[a($HW,$code,3)] = v($HW,$code,1) + v($HW,$code,2);
         $HW->{'i'} += 4;
       },
     },
@@ -238,7 +270,7 @@ sub ops {
       'arity' => 3,
       'ins' => sub {
         my ($HW,$code) = @_;
-        $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) * v($HW,$code,2);
+        $code->[a($HW,$code,3)] = v($HW,$code,1) * v($HW,$code,2);
         $HW->{'i'} += 4;
       }
     },
@@ -247,7 +279,7 @@ sub ops {
       'arity' => 1,
       'ins' => sub {
         my ($HW,$code) = @_;
-        $code->[$code->[$HW->{'i'} + 1]] = $HW->{'IN'};
+        $code->[a($HW,$code,1)] = shift @{$HW->{'IN'}};
         $HW->{'i'} += 2;
       },
     },
@@ -256,7 +288,7 @@ sub ops {
       'arity' => 1,
       'ins' => sub {
         my ($HW,$code) = @_;
-        $HW->{'OUT'} = v($HW,$code,1);
+        push @{$HW->{'OUT'}},v($HW,$code,1);
         $HW->{'i'} += 2;
       },
     },
@@ -284,10 +316,10 @@ sub ops {
       'ins' => sub {
         my ($HW,$code) = @_;
         if ( v($HW,$code,1) < v($HW,$code,2) ) {
-          $code->[$code->[$HW->{'i'} + 3]] = 1;
+          $code->[a($HW,$code,3)] = 1;
         }
         else {
-          $code->[$code->[$HW->{'i'} + 3]] = 0;
+          $code->[a($HW,$code,3)] = 0;
         }
         $HW->{'i'} += 4;
       }
@@ -298,15 +330,24 @@ sub ops {
       'ins' => sub {
         my ($HW,$code) = @_;
         if ( v($HW,$code,1) == v($HW,$code,2) ) {
-          $code->[$code->[$HW->{'i'} + 3]] = 1;
+          $code->[a($HW,$code,3)] = 1;
         }
         else {
-          $code->[$code->[$HW->{'i'} + 3]] = 0;
+          $code->[a($HW,$code,3)] = 0;
         }
         $HW->{'i'} += 4;
       }
     },
-
+    '9' => {
+      'name' => 'BASE',
+      'arity' => 1,
+      'ins' => sub {
+        my ($HW,$code) = @_;
+        my $value = v($HW,$code,1);
+        $HW->{'base'} = $HW->{'base'} + v($HW,$code,1);
+        $HW->{'i'} += 2;
+      }
+    },
    '99' => {
      'name' => 'END',
      'arity' => 0,
@@ -360,6 +401,12 @@ sub print_line {
     for ($j = 1 ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
         print " ",f($HW,$code,$j);
     }
+    if ($HW->{'debug'}) {
+      print " base: ",$HW->{'base'};
+      for (my $i=1;$i<$len;$i++) {
+        print " v$i: ",v($HW,$code,$i);
+      }
+    }
     print "\n";
 
     return $len;
@@ -378,4 +425,5 @@ sub code_string2array {
   my @array = $string =~ m/([-]?\d+)/g;
   return @array;
 }
+
 
