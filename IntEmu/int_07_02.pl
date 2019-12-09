@@ -1,5 +1,4 @@
 #!perl
-
 use strict;
 use warnings;
 
@@ -64,7 +63,17 @@ my $tests = [
 ];
 
 my $code = [];
-my $HW_init = {'IN' => '', 'OUT' => '', 'i' => 0, 'p1' => 0, 'p2' => 0, 'p3' => 0, 'debug' => 0, 'halt' => 0, 'wait' => 0,};
+my $HW_init = {
+  'IN'    => '',
+  'OUT'   => '',
+  'i'     => 0,
+  'p1'    => 0,
+  'p2'    => 0,
+  'p3'    => 0,
+  'debug' => 0,
+  'halt'  => 0,
+  'wait'  => 0,
+};
 
 if (1) {
   my $test_count = 0;
@@ -88,9 +97,6 @@ if (1) {
 
     my $result = $HW->{'OUT'};
 
-    #print '$result: ',$result,"\n";
-
-    #decomp($HW,$code);
     if ($result == $test->[1]) {
       print "$test_count OK - ",$test->[3],"\n";
     }
@@ -119,88 +125,10 @@ if (0) {
     print "$test_count decompile - ",$test->[3],"\n";
     print '$code: ',code_array2string($code),"\n";
     decomp($HW,$code);
-
   }
 }
 
-
-sub code_array2string {
-  my ($array) = @_;
-
-  my $string = join(',', @{$array} );
-  return $string;
-}
-
-sub code_string2array {
-  my ($string) = @_;
-
-  my @array = $string =~ m/([-]?\d+)/g;
-  return @array;
-}
-
-sub decomp {
-  my ($HW,$code) = @_;
-
-  print "\n",'ADDR',"\n";
-  for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
-    $HW->{'i'} += print_line($HW,$code);
-  }
-  print "\n";
-}
-
-sub print_line {
-  my ($HW,$code) = @_;
-
-    my $op = op($HW,$code);
-
-    my $i = $HW->{'i'};
-
-    my $len;my $name;
-    if (ref ops($op)) {
-      $len  = ops($op)->{'arity'} + 1;
-      $name = ops($op)->{'name'};
-    }
-    else { $len = 1; $name = 'DATA'; }
-
-    if (($i + $len) > scalar(@{$code})) { $len = 1; $name = 'DATA'; }
-
-    #print ' $i $len $name @{$code} '," $i $len $name ",scalar(@{$code}),"\n";
-
-    print sprintf("%04d",$HW->{'i'});
-
-    my $j = 0;
-
-    for ( ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
-        print " ",sprintf("%5s",sprintf("%d", $code->[$HW->{'i'} + $j]));
-    }
-    for ( ;($j < 4) ; $j++) {
-        print " ",sprintf("%5s"," ");
-    }
-    print " ",sprintf("%-5s",$name);
-
-    for ($j = 1 ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
-        print " ",f($HW,$code,$j);
-    }
-    print "\n";
-
-    return $len;
-}
-
-sub step {
-  my ($HW,$code) = @_;
-
-  if ($HW->{'debug'} > 0) {
-    print "\n",'DEBUG',' IN: ',$HW->{'IN'},"\n";
-    print 'ADDR',"\n";
-  }
-
-  my $op = op($HW,$code);
-
-  if ($HW->{'debug'} > 0) { print_line($HW,$code); }
-
-  ops($op)->{'ins'}->($HW,$code);
-
-}
+###### SUBS ##########
 
 sub runit {
   my ($HW,$code) = @_;
@@ -223,13 +151,23 @@ sub runit {
     else {
       ops($op)->{'ins'}->($HW,$code);
     }
-
   }
 }
 
+sub step {
+  my ($HW,$code) = @_;
 
+  if ($HW->{'debug'} > 0) {
+    print "\n",'DEBUG',' IN: ',$HW->{'IN'},"\n";
+    print 'ADDR',"\n";
+  }
 
+  my $op = op($HW,$code);
 
+  if ($HW->{'debug'} > 0) { print_line($HW,$code); }
+
+  ops($op)->{'ins'}->($HW,$code);
+}
 
 =pod
 ABCDE
@@ -238,32 +176,23 @@ ABCDE
 DE - two-digit opcode,      02 == opcode 2
  C - mode of 1st parameter,  0 == position mode
  B - mode of 2nd parameter,  1 == immediate mode
- A - mode of 3rd parameter,  0 == position mode,
-                                  omitted due to being a leading zero
+ A - mode of 3rd parameter,  0 == position mode, omit leading zero
 =cut
+
 sub op {
   my ($HW,$code) = @_;
 
-  #print '*** op()',"\n";
-
   my $op = $code->[$HW->{'i'}];
 
-  #print '$op: ',$op,"\n";
-
   my ($instr) = $op =~ /(\d?\d)$/;
-  #print '$instr: ',$instr,"\n";
 
   $op =~ s/(\d?\d)$//;
-  #print '$op: ',$op,"\n";
 
   $op = '000' . $op;
-  #print '$op: ',$op,"\n";
 
   ($HW->{'p3'},$HW->{'p2'},$HW->{'p1'}) = $op =~ /(\d)(\d)(\d)$/;
-  #print 'p3..p1: ',join(' ',($HW->{'p3'},$HW->{'p2'},$HW->{'p1'})),"\n";
 
   $instr =~ s/^0*//;
-  #print '$instr: ',$instr,"\n";
 
   return $instr;
 }
@@ -276,8 +205,6 @@ sub v {
   # immediate (literal) mode set ? litteral : value at address
   my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : $code->[$code->[$HW->{'i'} + $p]];
 
-  #print 'v() $p $val : ',"$p $val","\n";
-
   return $val;
 }
 
@@ -286,7 +213,7 @@ sub f {
 
   my $px = 'p' . $p;
 
-  # immediate (literal) mode set ? litteral : value at address
+  # immediate (literal) mode set ? literal : value at address
   my $val = $HW->{$px} ? $code->[$HW->{'i'} + $p] : '*' . $code->[$HW->{'i'} + $p];
 
   return $val;
@@ -311,7 +238,6 @@ sub ops {
       'ins' => sub {
         my ($HW,$code) = @_;
         $code->[$code->[$HW->{'i'} + 3]] = v($HW,$code,1) * v($HW,$code,2);
-        #print 'MULT result: ',$code->[$code->[$HW->{'i'} + 3]],"\n";
         $HW->{'i'} += 4;
       }
     },
@@ -389,6 +315,70 @@ sub ops {
 
   return $ops->{$op};
 }
+
+sub decomp {
+  my ($HW,$code) = @_;
+
+  print "\n",'ADDR',"\n";
+  for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
+    $HW->{'i'} += print_line($HW,$code);
+  }
+  print "\n";
+}
+
+sub print_line {
+  my ($HW,$code) = @_;
+
+    my $op = op($HW,$code);
+
+    my $i = $HW->{'i'};
+
+    my $len;my $name;
+    if (ref ops($op)) {
+      $len  = ops($op)->{'arity'} + 1;
+      $name = ops($op)->{'name'};
+    }
+    else { $len = 1; $name = 'DATA'; }
+
+    if (($i + $len) > scalar(@{$code})) { $len = 1; $name = 'DATA'; }
+
+    #print ' $i $len $name @{$code} '," $i $len $name ",scalar(@{$code}),"\n";
+
+    print sprintf("%04d",$HW->{'i'});
+
+    my $j = 0;
+
+    for ( ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
+        print " ",sprintf("%5s",sprintf("%d", $code->[$HW->{'i'} + $j]));
+    }
+    for ( ;($j < 4) ; $j++) {
+        print " ",sprintf("%5s"," ");
+    }
+    print " ",sprintf("%-5s",$name);
+
+    for ($j = 1 ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
+        print " ",f($HW,$code,$j);
+    }
+    print "\n";
+
+    return $len;
+}
+
+sub code_array2string {
+  my ($array) = @_;
+
+  my $string = join(',', @{$array} );
+  return $string;
+}
+
+sub code_string2array {
+  my ($string) = @_;
+
+  my @array = $string =~ m/([-]?\d+)/g;
+  return @array;
+}
+
+
 
 
 
