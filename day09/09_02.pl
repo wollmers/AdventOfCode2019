@@ -81,7 +81,7 @@ if (0) {
     #$HW->{'debug'} = 1;
     runit($HW,$code);
     my $result = shift @{$HW->{'OUT'}};
-    $result //= -999;
+    #my $result = join(',',@{$HW->{'OUT'}});
 
     if ($result == $test->[1]) {
       print "$test_count OK \n";
@@ -105,13 +105,14 @@ if (1) {
     $HW->{'alloc_first'} = scalar @{$code};
     $HW->{'alloc_last'}  = $HW->{'alloc_first'};
     #decomp($HW,$code);
-    alloc($HW,$code,10000);
+    alloc($HW,$code,103);
 
     #$HW->{'debug'} = 1;
     runit($HW,$code);
     my $result = join(',',@{$HW->{'OUT'}});
 
-    say 'result: ',$result; # task1: 2662308295 task 2: 63441
+    #say 'result: ',$result; # task1: 2662308295 task 2: 63441
+    decomp($HW,$code);
 }
 
 
@@ -140,7 +141,7 @@ sub runit {
         ops($op)->{'ins'}->($HW,$code);
       }
       else {
-        say 'undefined op: ',$op;
+        say 'undefined op: ',$op,' at addr ',$HW->{'i'};
         return;
       }
     }
@@ -164,7 +165,7 @@ sub step {
 
 sub alloc {
   my ($HW,$code,$cells) = @_;
-  my $end = $HW->{'alloc_first'} + $HW->{'alloc_last'};
+  #my $end = $HW->{'alloc_first'} + $HW->{'alloc_last'};
   for (my $i=0;$i<$cells;$i++) {
     $code->[$HW->{'alloc_last'} + $i + 1] = 0;
   }
@@ -362,7 +363,8 @@ sub decomp {
   my ($HW,$code) = @_;
 
   print "\n",'ADDR',"\n";
-  for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
+  #for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
+  for ($HW->{'i'}=0; $HW->{'i'} <= $HW->{'alloc_last'};) {
     $HW->{'i'} += print_line($HW,$code);
   }
   print "\n";
@@ -391,12 +393,12 @@ sub print_line {
     my $j = 0;
 
     for ( ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
-        print " ",sprintf("%5s",sprintf("%d", $code->[$HW->{'i'} + $j]));
+        print " ",sprintf("%8s",sprintf("%d", $code->[$HW->{'i'} + $j]));
     }
     for ( ;($j < 4) ; $j++) {
-        print " ",sprintf("%5s"," ");
+        print " ",sprintf("%8s"," ");
     }
-    print " ",sprintf("%-5s",$name);
+    print " ",sprintf("%-8s",$name);
 
     for ($j = 1 ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
         print " ",f($HW,$code,$j);
