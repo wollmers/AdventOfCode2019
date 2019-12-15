@@ -52,9 +52,12 @@ sub runit {
       return;
     }
     elsif ($op == 3) {
-      if ($HW->{'wait'}) { return; }
+      my $in = $HW->{'IN'}->[0];
+      if (!defined $in) {
+        $HW->{'wait'} = 1;
+        return;
+      }
       ops($op)->{'ins'}->($HW,$code);
-      $HW->{'wait'} = 1;
     }
     else {
       if (defined ops($op)) {
@@ -135,7 +138,7 @@ sub a {
 
   if ($addr < 0) { say 'ERROR addr: ',$addr,' < 0 is outside memory'; }
   elsif ($addr > $HW->{'alloc_last'}) {
-    say 'ERROR addr: ',$addr,' outside memory last: ',$HW->{'alloc_last'};
+    #say 'ERROR addr: ',$addr,' outside memory last: ',$HW->{'alloc_last'};
     alloc($HW, $code, $addr - $HW->{'alloc_last'});
   }
   return $addr;
@@ -190,6 +193,11 @@ sub ops {
       'arity' => 1,
       'ins' => sub {
         my ($HW,$code) = @_;
+        my $in = $HW->{'IN'}->[0];
+        unless (defined $in) {
+          say "in undefined";
+          print_line($HW,$code);
+        }
         $code->[a($HW,$code,1)] = shift @{$HW->{'IN'}};
         $HW->{'i'} += 2;
       },
@@ -199,6 +207,11 @@ sub ops {
       'arity' => 1,
       'ins' => sub {
         my ($HW,$code) = @_;
+        my $out = v($HW,$code,1);
+        unless (defined $out) {
+          say "out undefined";
+          print_line($HW,$code);
+        }
         push @{$HW->{'OUT'}},v($HW,$code,1);
         $HW->{'i'} += 2;
       },
@@ -274,9 +287,11 @@ sub decomp {
 
   print "\n",'ADDR',"\n";
   #for ($HW->{'i'}=0; $HW->{'i'} < @{$code};) {
+  my $debug = $HW->{'debug'};
   for ($HW->{'i'}=0; $HW->{'i'} <= $HW->{'alloc_last'};) {
     $HW->{'i'} += print_line($HW,$code);
   }
+  $HW->{'debug'} = $debug;
   print "\n";
 }
 
@@ -313,12 +328,13 @@ sub print_line {
     for ($j = 1 ;($j < $len) && (($i + $j) < @{$code}); $j++ ) {
         print " ",f($HW,$code,$j);
     }
-    if ($HW->{'debug'}) {
+    #if ($HW->{'debug'}) {
       print " base: ",$HW->{'base'};
       for (my $i=1;$i<$len;$i++) {
-        print " v$i: ",v($HW,$code,$i);
+        my $value = ( defined v($HW,$code,$i)) ? v($HW,$code,$i) : '-undef';
+        print " v$i: ",$value;
       }
-    }
+    #}
     print "\n";
 
     return $len;
