@@ -31,13 +31,14 @@ sub runit {
 
   if ($HW->{'debug'} > 0) {
     print "\n",'DEBUG',
-    ' IN: [',join(',',@{$HW->{'IN'}}),']',
+    ' IN:  [',join(',',@{$HW->{'IN'}}),']',
     ' OUT: [',join(',',@{$HW->{'OUT'}}),']',
     "\n";
     print 'ADDR',"\n";
   }
 
-  for ( ; $HW->{'i'} < @{$code}; ) {
+  #for ( ; $HW->{'i'} < @{$code}; ) {
+  while (1) {
 
     my $op = op($HW,$code);
     if ($HW->{'debug'} > 0) { print_line($HW,$code); }
